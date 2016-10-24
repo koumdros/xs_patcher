@@ -1,12 +1,29 @@
 #!/bin/bash
 ## xs_patcher
 ## detects xenserver version and applies the appropriate patches
+PROGNAME=$(basename $0)
 
 ## URL to patches: http://updates.xensource.com/XenServer/updates.xml
 
 source /etc/xensource-inventory
 TMP_DIR=tmp
 CACHE_DIR=cache
+
+# lock dirs/files
+LOCKDIR="/var/tmp/$PROGNAME-lock"
+#this will only work on the first effort to re-run as the second exiting script will triger the trap and remove the original lockdir
+trap 'rmdir $LOCKDIR' 0 1 2 3 15 EXIT # trap SIGHUP SIGINT SIGQUIT SIGTERM # under normal operation the lockdir will be removed at the end of the scripts run
+
+if [[ -d $LOCKDIR ]]; then
+    msg_fatal "I am running already. exiting..."
+else
+    mkdir "$LOCKDIR"
+	if [ $? -ne 0 ] ; then
+		msg_fatal "someone beat me to it ..."
+	fi
+fi
+
+
 
 function get_xs_version {
 	get_version=`cat /etc/redhat-release | awk -F'-' {'print $1'}`
