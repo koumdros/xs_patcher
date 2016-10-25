@@ -88,17 +88,17 @@ function apply_patches {
 
 			echo "Applying $PATCH_NAME... [ Release Notes @ $PATCH_KB ]"
 
-			_target_PATCH_UUID=$(xe patch-upload file-name=$CACHE_DIR/$PATCH_NAME.xsupdate)
+			_uploaded_PATCH_UUID=$(xe patch-upload file-name=$CACHE_DIR/$PATCH_NAME.xsupdate)
 
 			# sanity check
 
-			if [[ -z $_target_PATCH_UUID ]]; then
+			if [[ -z $_uploaded_PATCH_UUID ]]; then
 
 				echo "Patch $PATCH_UUID failure, not present on host"
 				echo "Check that it exists at :"
 				echo " $CACHE_DIR/$PATCH_NAME.xsupdate and rerun the script"
 			else
-				if [[ $_target_PATCH_UUID == "$PATCH_UUID" ]]; then
+				if [[ $_uploaded_PATCH_UUID == "$PATCH_UUID" ]]; then
 						xe patch-apply uuid=$PATCH_UUID host-uuid=$INSTALLATION_UUID
 						# sanity check
 						if [[ $? -eq 0 ]]; then
@@ -112,10 +112,10 @@ function apply_patches {
 							echo "B. other reasons in log : ///"
 						fi
                 else
-                		echo "Patch ID $PATCH_UUID is not equal to $_target_PATCH_UUID as returned form the actually uploaded patch"
+                		echo "Patch ID $PATCH_UUID is not equal to $_uploaded_PATCH_UUID as returned form the actually uploaded patch"
                 		echo " check that the supplied UUIDs in the relevant version file patches/$DISTRO are correct"
                 		echo "-------"
-                		echo " you can also try reruning this script and/or try to manually apply this patch with uuid $_target_PATCH_UUID"
+                		echo " you can also try reruning this script and/or try to manually apply this patch with uuid $_uploaded_PATCH_UUID"
                 fi
           fi
 
