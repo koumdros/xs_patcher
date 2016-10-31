@@ -79,11 +79,30 @@ function apply_patches {
 
 			if [ ! -f $CACHE_DIR/$PATCH_NAME.xsupdate ]; then
 				echo "Downloading from $PATCH_URL..."
-				wget -q $PATCH_URL -O $TMP_DIR/$PATCH_FILE
-				echo "Unpacking..."
-				unzip -qq $TMP_DIR/$PATCH_FILE -d $CACHE_DIR
-				## cleanup the patchfile 
-				rm $TMP_DIR/$PATCH_FILE
+				
+				wget -q $PATCH_URL -O $TMP_DIR/"$PATCH_FILE"
+				## we need errorchecking if wget fails
+
+				# we can check if wget fails ( complex erro messages..)
+				# or check if the file exists ( and /or is readable which we need to unzip it..) after wget finishes
+
+				if [ -r $TMP_DIR/"$PATCH_FILE" ] ; then
+					echo "Unpacking..."
+					unzip -qq $TMP_DIR/"$PATCH_FILE" -d $CACHE_DIR  > /dev/null 2>&1
+						if [[ $? == 0 ]] ; then
+								echo "Uncompressing succesfull.."
+						else
+								echo -e "FATAL: failed to uncopmpress the update file $PATCH_FILE" >&2
+								sleep 2
+    							exit 1	
+    					fi
+					## cleanup the patchfile 
+					rm $TMP_DIR/"$PATCH_FILE"
+				else 
+					echo "wget failed to download file $PATCH_URL"
+					sleep 2
+    				exit 1
+    			fi	
 			fi	
 
 			echo "Applying $PATCH_NAME... [ Release Notes @ $PATCH_KB ]"
@@ -104,9 +123,11 @@ function apply_patches {
 						if [[ $? -eq 0 ]]; then
 							rm $CACHE_DIR/${PATCH_NAME}.xsupdate
 							rm $CACHE_DIR/${PATCH_NAME}.bz2
+							# write to logfile that rthe operation succeeded
+							logger -i -t XS_patcher "$PROGNAME installed XenServer patch $PATCH_NAME with UUID $PATCH_UUID "
 						else
 							break
-							echo "$PATCH_NAME patch failed, wasnt applied on this host"	
+							echo "$PATCH_NAME patch failed, wasn't applied on this host"	
 							echo "check reasons of possible failure"
 							echo "A. full disk"
 							echo "B. other reasons in log : ///"
@@ -123,9 +144,8 @@ function apply_patches {
 		fi
 done
 
-#call the lceaning function 
+#call the cleaning function 
 # todo(10): ideially it should be incorporated in the trap function with a double loop
-
 _temp_cleaner
 
 	echo "Everything has been patched up!"
